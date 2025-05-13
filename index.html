@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <title>Batalha Naval</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      background-color: #e0f7fa;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+    h1 {
+      margin-top: 20px;
+    }
+    .board-container {
+      display: flex;
+      justify-content: center;
+      gap: 40px;
+      margin-top: 20px;
+    }
+    .board {
+      display: grid;
+      grid-template-columns: repeat(10, 30px);
+      grid-template-rows: repeat(10, 30px);
+      gap: 2px;
+    }
+    .cell {
+      width: 30px;
+      height: 30px;
+      background-color: #b2dfdb;
+      border: 1px solid #00796b;
+      cursor: pointer;
+    }
+    .hit {
+      background-color: red !important;
+    }
+    .miss {
+      background-color: white !important;
+    }
+    .ship {
+      background-color: #00796b;
+    }
+    .disabled {
+      pointer-events: none;
+    }
+    footer {
+      margin-top: auto;
+      background-color: #00796b;
+      color: white;
+      padding: 10px 0;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Batalha Naval</h1>
+<p>Clique no tabuleiro do computador para atacar!</p>
+
+<div class="board-container">
+  <div>
+    <h2>Seu Tabuleiro</h2>
+    <div id="player-board" class="board"></div>
+  </div>
+  <div>
+    <h2>Computador</h2>
+    <div id="computer-board" class="board"></div>
+  </div>
+</div>
+
+<footer>
+  <p>Desenvolvido por Ali Roze Muniz. &copy; 2025 - Jogo Batalha Naval</p>
+</footer>
+
+<script>
+  const BOARD_SIZE = 10;
+  const SHIPS = [5, 4, 3, 3, 2]; // Tamanhos dos navios
+
+  const playerBoard = document.getElementById('player-board');
+  const computerBoard = document.getElementById('computer-board');
+
+  let playerShips = [];
+  let computerShips = [];
+
+  function createBoard(board, isPlayer) {
+    for (let i = 0; i < BOARD_SIZE * BOARD_SIZE; i++) {
+      const cell = document.createElement('div');
+      cell.classList.add('cell');
+      cell.dataset.index = i;
+      board.appendChild(cell);
+    }
+  }
+
+  function placeShipsRandomly(boardArray) {
+    for (let size of SHIPS) {
+      let placed = false;
+      while (!placed) {
+        const isHorizontal = Math.random() < 0.5;
+        const row = Math.floor(Math.random() * BOARD_SIZE);
+        const col = Math.floor(Math.random() * BOARD_SIZE);
+        const shipCells = [];
+
+        for (let i = 0; i < size; i++) {
+          const r = row + (isHorizontal ? 0 : i);
+          const c = col + (isHorizontal ? i : 0);
+          if (r >= BOARD_SIZE || c >= BOARD_SIZE) break;
+          shipCells.push(r * BOARD_SIZE + c);
+        }
+
+        if (shipCells.length === size && !shipCells.some(index => boardArray.includes(index))) {
+          boardArray.push(...shipCells);
+          placed = true;
+        }
+      }
+    }
+  }
+
+  function renderPlayerShips() {
+    const cells = playerBoard.querySelectorAll('.cell');
+    playerShips.forEach(index => {
+      cells[index].classList.add('ship');
+    });
+  }
+
+  function checkHit(index, shipArray) {
+    const i = shipArray.indexOf(index);
+    if (i !== -1) {
+      shipArray.splice(i, 1);
+      return true;
+    }
+    return false;
+  }
+
+  function endGame(message) {
+    alert(message);
+    computerBoard.classList.add('disabled');
+  }
+
+  function computerTurn() {
+    const cells = playerBoard.querySelectorAll('.cell');
+    let index;
+    do {
+      index = Math.floor(Math.random() * BOARD_SIZE * BOARD_SIZE);
+    } while (cells[index].classList.contains('hit') || cells[index].classList.contains('miss'));
+
+    const hit = checkHit(index, playerShips);
+    cells[index].classList.add(hit ? 'hit' : 'miss');
+
+    if (playerShips.length === 0) {
+      endGame("O computador venceu!");
+    }
+  }
+
+  // Jogo começa
+  createBoard(playerBoard, true);
+  createBoard(computerBoard, false);
+  placeShipsRandomly(playerShips);
+  placeShipsRandomly(computerShips);
+  renderPlayerShips();
+
+  // Jogada do jogador
+  computerBoard.addEventListener('click', function (e) {
+    const target = e.target;
+    if (!target.classList.contains('cell')) return;
+    const index = parseInt(target.dataset.index);
+
+    if (target.classList.contains('hit') || target.classList.contains('miss')) return;
+
+    const hit = checkHit(index, computerShips);
+    target.classList.add(hit ? 'hit' : 'miss');
+
+    if (computerShips.length === 0) {
+      endGame("Você venceu!");
+      return;
+    }
+
+    setTimeout(computerTurn, 500);
+  });
+</script>
+
+</body>
+</html>
